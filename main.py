@@ -40,9 +40,10 @@ class WorkingThread(threading.Thread):
 
     def give_command(self, sentence):
         words = sentence.split()
+
         for word in words:
             if word not in self.possible_commands and word not in w2n.american_number_system \
-                    and int(word) not in w2n.american_number_system:
+                    and word not in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'):
                 print(f"({threading.get_ident()}) Some of the words do not match with possible")
                 return
 
