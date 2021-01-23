@@ -5,6 +5,7 @@ import threading
 import mouse
 from word2number import w2n
 from window import show_window
+from image_finder import find_on_screen
 
 
 def press_key(key):
@@ -51,9 +52,10 @@ class WorkingThread(threading.Thread):
                                   "space": (press_key, " ", release_key), "walk": [press_key, "w", release_key],
                                   "exit": (exit, 0), "stop": None, "next": None, "f***": (self.hit_key, (exit, 0)),
                                   "select": [self.hit_key, None], "up": [self.mouse_move, [0, -30]],
-                                  "down": [self.mouse_move, [0, 30]], "mouse": [self.mouse_move, [0, 30]]}
+                                  "down": [self.mouse_move, [0, 30]], "mouse": [self.mouse_move, [0, 30]],
+                                  "find": [self.find, "Options"]}
         self.input_commands = {"select": [self.hit_key, None], "run": [press_key, "", release_key],
-                               "mouse": [self.mouse_move, [0, 30]]}
+                               "mouse": [self.mouse_move, [0, 30]], "find": [self.find, "Options"]}
 
         self.direction = ("right", "left", "back")
 
@@ -69,7 +71,9 @@ class WorkingThread(threading.Thread):
         words = sentence.split()
 
         for word in words:
-            if word.lower() not in self.possible_commands and word not in w2n.american_number_system \
+            if word.lower() in self.input_commands:
+                break
+            elif word.lower() not in self.possible_commands and word not in w2n.american_number_system \
                     and word not in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') and word not in self.direction:
                 print(f"({threading.get_ident()}) Some of the words do not match with possible")
                 return
@@ -105,9 +109,14 @@ class WorkingThread(threading.Thread):
                     self.commands[-1][1] = run_direction(word)
                 elif self.commands[-1][0] == self.mouse_move:
                     self.commands[-1][1] = mouse_direction(word)
+                elif self.commands[-1][0] == self.find:
+                    sent = ""
+                    for w in words[1:len(words)]:
+                        sent += w
+                    self.commands[-1][1] = sent
                 add_input = False
                 self.adding = False
-                continue
+                break
 
             print(f"({threading.get_ident()}) Appending command {self.possible_commands[word.lower()]}")
             self.commands.append(self.possible_commands[word.lower()])
@@ -119,6 +128,8 @@ class WorkingThread(threading.Thread):
                 self.commands[-1][1] = "w"
             elif self.commands[-1][0] == self.mouse_move:
                 self.commands[-1][1] = [0, -30]
+            elif self.commands[-1][0] == self.mouse_move:
+                self.commands[-1][1] = "Settings"
             self.adding = False
 
         self.lock.release()
@@ -146,6 +157,11 @@ class WorkingThread(threading.Thread):
     def mouse_move(self, values):
         mouse.move(values[0], values[1], absolute=False, duration=0.5)
         self.remove_command(self.mouse_move)
+
+    def find(self, word):
+        pos = find_on_screen(word)
+        mouse.move(pos[0], pos[1])
+        self.remove_command(self.find)
 
 
 class RecognizingThread(threading.Thread):
