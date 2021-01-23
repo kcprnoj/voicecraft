@@ -8,16 +8,16 @@ from window import show_window
 from image_finder import find_on_screen
 
 
-def press_key(key):
+def press_key(key: str) -> None:
     kb.press(key)
     time.sleep(50 / 1000)
 
 
-def release_key(key):
+def release_key(key: str) -> None:
     kb.release(key)
 
 
-def run_direction(word):
+def run_direction(word: str) -> None:
     if word == "right":
         return "d"
     elif word == "left":
@@ -28,7 +28,7 @@ def run_direction(word):
         return "w"
 
 
-def mouse_direction(word):
+def mouse_direction(word: str) -> None:
     if word == "right":
         return [30, 0]
     elif word == "left":
@@ -39,7 +39,7 @@ def mouse_direction(word):
         return [0, -30]
 
 
-def push(word):
+def push(word: str) -> None:
     if word.lower() == 'right':
         if not mouse.is_pressed(button="RIGHT"):
             mouse.press(button="RIGHT")
@@ -48,7 +48,7 @@ def push(word):
             mouse.press()
 
 
-def release_mouse(word):
+def release_mouse(word: str) -> None:
     if word.lower() == 'right':
         mouse.release(button="RIGHT")
     else:
@@ -70,11 +70,12 @@ class WorkingThread(threading.Thread):
                                   "select": [self.select, None], "up": [self.mouse_move, [0, -30]],
                                   "down": [self.mouse_move, [0, 30]], "mouse": [self.mouse_move, [0, 30]],
                                   "find": [self.find, "Options"], "click": [self.click, ""],
-                                  "hold": [push, "", release_mouse]}
+                                  "hold": [push, "", release_mouse], "escape": (self.hit_key, chr(27)),
+                                  "say": [self.say, ""], "creek": [self.click, ""]}
         self.input_commands = {"select": [self.select, None], "run": [press_key, "", release_key],
                                "mouse": [self.mouse_move, [0, 30]], "find": [self.find, "Options"],
                                "click": [self.click, ""], "walk": [press_key, "w", release_key],
-                               "hold": [push, "", release_mouse]}
+                               "hold": [push, "", release_mouse], "say": [self.say, ""],  "creek": [self.click, ""]}
 
         self.direction = ("right", "left", "back")
 
@@ -86,7 +87,7 @@ class WorkingThread(threading.Thread):
                 command[0](command[1])
             self.lock.release()
 
-    def give_command(self, sentence: str):
+    def give_command(self, sentence: str) -> None :
         words = sentence.split()
 
         for word in words:
@@ -129,12 +130,17 @@ class WorkingThread(threading.Thread):
                 elif self.commands[-1][0] == self.mouse_move:
                     self.commands[-1][1] = mouse_direction(word)
                 elif self.commands[-1][0] == self.find:
-                    sent = ""
+                    sent = ''
                     for w in words[1:len(words)]:
                         sent += w
                     self.commands[-1][1] = sent
                 elif self.commands[-1][0] == self.click:
                     self.commands[-1][1] = word
+                elif self.commands[-1][0] == self.say:
+                    sent = ' '
+                    for w in words[1:len(words)]:
+                        sent += w + ' '
+                    self.commands[-1][1] = sent
                 add_input = False
                 self.adding = False
                 break
@@ -198,6 +204,19 @@ class WorkingThread(threading.Thread):
         if key in (1, 2, 3, 4, 5, 6, 7, 8, 9):
             self.hit_key(key)
         self.remove_command(self.select)
+
+    def say(self, sentence):
+        press_key('t')
+        release_key('t')
+
+        for char in sentence:
+            press_key(char)
+            release_key(char)
+
+        press_key('\n')
+        release_key('\n')
+
+        self.remove_command(self.say)
 
 
 class RecognizingThread(threading.Thread):
