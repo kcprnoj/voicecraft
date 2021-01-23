@@ -39,6 +39,22 @@ def mouse_direction(word):
         return [0, -30]
 
 
+def push(word):
+    if word.lower() == 'right':
+        if not mouse.is_pressed(button="RIGHT"):
+            mouse.press(button="RIGHT")
+    else:
+        if not mouse.is_pressed():
+            mouse.press()
+
+
+def release_mouse(word):
+    if word.lower() == 'right':
+        mouse.release(button="RIGHT")
+    else:
+        mouse.release()
+
+
 class WorkingThread(threading.Thread):
     def __init__(self):
         super().__init__()
@@ -51,11 +67,14 @@ class WorkingThread(threading.Thread):
                                   "inventory": (self.hit_key, "e"), "jump": (press_key, " ", release_key),
                                   "space": (press_key, " ", release_key), "walk": [press_key, "w", release_key],
                                   "exit": (exit, 0), "stop": None, "next": None, "f***": (self.hit_key, (exit, 0)),
-                                  "select": [self.hit_key, None], "up": [self.mouse_move, [0, -30]],
+                                  "select": [self.select, None], "up": [self.mouse_move, [0, -30]],
                                   "down": [self.mouse_move, [0, 30]], "mouse": [self.mouse_move, [0, 30]],
-                                  "find": [self.find, "Options"]}
-        self.input_commands = {"select": [self.hit_key, None], "run": [press_key, "", release_key],
-                               "mouse": [self.mouse_move, [0, 30]], "find": [self.find, "Options"]}
+                                  "find": [self.find, "Options"], "click": [self.click, ""],
+                                  "hold": [push, "", release_mouse]}
+        self.input_commands = {"select": [self.select, None], "run": [press_key, "", release_key],
+                               "mouse": [self.mouse_move, [0, 30]], "find": [self.find, "Options"],
+                               "click": [self.click, ""], "walk": [press_key, "w", release_key],
+                               "hold": [push, "", release_mouse]}
 
         self.direction = ("right", "left", "back")
 
@@ -99,7 +118,7 @@ class WorkingThread(threading.Thread):
                 add_input = True
                 self.adding = True
             elif add_input:
-                if self.commands[-1][0] == self.hit_key:
+                if self.commands[-1][0] == self.select:
                     try:
                         self.commands[-1][1] = w2n.word_to_num(word)
                     except ValueError:
@@ -114,12 +133,17 @@ class WorkingThread(threading.Thread):
                     for w in words[1:len(words)]:
                         sent += w
                     self.commands[-1][1] = sent
+                elif self.commands[-1][0] == self.click:
+                    self.commands[-1][1] = word
                 add_input = False
                 self.adding = False
                 break
 
-            print(f"({threading.get_ident()}) Appending command {self.possible_commands[word.lower()]}")
-            self.commands.append(self.possible_commands[word.lower()])
+            try:
+                print(f"({threading.get_ident()}) Appending command {self.possible_commands[word.lower()]}")
+                self.commands.append(self.possible_commands[word.lower()])
+            except KeyError:
+                print(f"({threading.get_ident()}) Wrong command : {word}")
 
         if add_input and self.adding:
             if self.commands[-1][0] == self.hit_key:
@@ -162,6 +186,18 @@ class WorkingThread(threading.Thread):
         pos = find_on_screen(word)
         mouse.move(pos[0], pos[1])
         self.remove_command(self.find)
+
+    def click(self, word):
+        if word.lower() == 'right':
+            mouse.click(button="RIGHT")
+        else:
+            mouse.click()
+        self.remove_command(self.click)
+
+    def select(self, key):
+        if key in (1, 2, 3, 4, 5, 6, 7, 8, 9):
+            self.hit_key(key)
+        self.remove_command(self.select)
 
 
 class RecognizingThread(threading.Thread):
