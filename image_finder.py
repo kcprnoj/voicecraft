@@ -18,7 +18,6 @@ def find_on_screen(word: str) -> (int, int):
     im = Image.open("images/screen.png")
     df = pytesseract.image_to_data(im, output_type='data.frame')
     df['text'] = df['text'].str.lower()
-    df.to_csv("lol.csv")
     try:
         return df.loc[df['text'] == word].iloc[0]['left'], df.loc[df['text'] == word].iloc[0]['top']
     except IndexError:
