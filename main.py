@@ -17,7 +17,7 @@ def release_key(key: str) -> None:
     kb.release(key)
 
 
-def run_direction(word: str) -> None:
+def run_direction(word: str) -> str:
     if word == "right":
         return "d"
     elif word == "left":
