@@ -1,0 +1,40 @@
+pip install SpeechRecognition pyautogui
+import speech_recognition as sr
+import pyautogui
+
+# Create a speech recognition object
+recognizer = sr.Recognizer()
+
+def listen_for_commands():
+    with sr.Microphone() as source:
+        print("Listening...")
+        audio = recognizer.listen(source)
+
+        try:
+            # Recognize speech using Google Speech Recognition
+            command = recognizer.recognize_google(audio)
+            print("Command:", command)
+            process_command(command)
+        except sr.UnknownValueError:
+            print("Could not understand audio")
+        except sr.RequestError as e:
+            print("Could not request results from Google Speech Recognition service:", e)
+
+def process_command(command):
+    # Define your command processing logic here
+    if "forward" in command:
+        pyautogui.press('w')
+    elif "back" in command:
+        pyautogui.press('s')
+    elif "left" in command:
+        pyautogui.press('a')
+    elif "right" in command:
+        pyautogui.press('d')
+    elif "jump" in command:
+        pyautogui.press('space')
+    else:
+        print("Unknown command:", command)
+
+# Main loop
+while True:
+    listen_for_commands()
